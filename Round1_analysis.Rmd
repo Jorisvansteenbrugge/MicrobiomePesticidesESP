@@ -1,0 +1,48 @@
+---
+title: "Analysis round 1"
+output:
+  html_document:
+    df_print: paged
+    
+---
+<style type="text/css">
+.main-container {
+  max-width: 1800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+library(Microbial)
+library(phyloseq)
+library(magrittr)
+
+load("F:/DataPaula/Esparanza/Asv_tables.RData")
+
+
+```
+
+```{r}
+
+vars <- asv_table.fam.relab %>%  sample_variables %T>%
+```
+
+
+#### Permanova (genera)
+
+If I leave DDEpp,DDEop+DDEpp+DDDopTDE+DDTop+DDDppTDE out, it works otherwise it doesn't ...
+```{r}
+method = 'bray'
+metadata <- as(sample_data(asv_table.fam.relab), "data.frame")
+samp_dist <- distance(asv_table.fam.relab, method = method)
+vars_perm <- paste(vars, collapse = '+')
+form <- as.formula(paste("samp_dist ~", vars_perm))
+    
+adonis(samp_dist ~ PesticideConcentration+PesticideCompounds+Linuron+DimethenamidP+Cyromazine+Propamocarb+Flnicamid+Chloridazon+Metamitron+Cymoxanil+Azoxystrobin+Fluopicolide+BenthiavalicarbIsopropyl+Boscalid+Chlorpropham+Metribuzin+Desmedipham+Lenacil+Prosulfocarb+Penidmethalin+FenoxapropEthyl+Bixafen+Clethodim+Prothioconazole+ProthioconazoleDethio+tebuconazole+Metolachlor+Fenpropimorph+Bentazone+Adlrin+DDTpp+Glyphosate+AMPA, data = metadata, permutations = 999 )
+```
+
+
+Most is explained by PesticideConcentration, some by PesticideCompounds and Metribuzin 
+
+

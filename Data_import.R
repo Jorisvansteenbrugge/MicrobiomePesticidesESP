@@ -17,3 +17,5 @@ asv_table <- phyloseq(taxa, asv, meta)
 
 asv_table.fam <- tax_glom(asv_table, taxrank = 'Family')
 asv_table.fam.relab <- transform_sample_counts(asv_table.fam, function(OTU) OTU/sum(OTU))
+
+save(asv_table.fam, asv_table.fam.relab, file = "Asv_tables.RData")
