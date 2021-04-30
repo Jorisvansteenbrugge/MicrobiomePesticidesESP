@@ -1,9 +1,9 @@
 ---
 title: "Analysis round 1"
 output:
+  pdf_document: default
   html_document:
     df_print: paged
-    
 ---
 <style type="text/css">
 .main-container {
@@ -14,35 +14,100 @@ output:
 </style>
 
 ```{r message=FALSE, warning=FALSE, include=FALSE}
+library(knitr)
 library(Microbial)
 library(phyloseq)
 library(magrittr)
-
+library(microbiomeMarker)
 load("F:/DataPaula/Esparanza/Asv_tables.RData")
 
 
 ```
 
-```{r}
-
-vars <- asv_table.fam.relab %>%  sample_variables %T>%
+```{r echo=FALSE}
+vars <- asv_table.fam.relab %>%  sample_variables 
 ```
 
 
-#### Permanova (genera)
+#### All samples
+This is done on all samples, Organic and Conventional
+```{r}
+nsamples <- asv_table.treatment.fam.relab %>% sample_names() %>% length
+paste("Number of samples:", nsamples)
+```
+
+```{r}
+bray <- Permanova(asv_table.treatment.fam.relab, vars = c("Treatment"), method = 'bray')$aov.tab
+uuni <- Permanova(asv_table.treatment.fam.relab, vars = c("Treatment"), method = 'uunifrac')$aov.tab
+wuni <- Permanova(asv_table.treatment.fam.relab, vars = c("Treatment"), method = 'wunifrac')$aov.tab
+
+
+results <- data.frame("R2_Bray"= bray$R2, "Pval_Bray"= bray$`Pr(>F)`,
+           "R2_Unifrac" = uuni$R2, "Pval_Unifrac" = uuni$`Pr(>F)`,
+           "R2_Wunifrac" = wuni$R2, "Pval_Wunifrac" = wuni$`Pr(>F)`) 
+
+rownames(results) <- bray %>% rownames()
+kable(results)
+
+```
+So the Treatment doesn't explains very little of the variance (Organic vs Conventional). Most likely there is a lot variation present within the Treatments, making them harder to separate from each other.
+
+```{r}
+sample_data(asv_table.treatment.fam.relab)[ , 2] <- sample_data(asv_table.treatment.fam.relab)[ ,1]
+
+ordination <- ordinate(asv_table.treatment.fam.relab, method = "PCoA", distance = 'bray')
+p1 <- plot_ordination(asv_table.treatment.fam.relab, ordination, type = 'samples', color = 'Treatment')
+print(p1)
+```
+This plot more or less confirms that. Organic samples cluster relatively well (except for a few outliers), but conventional samples are all over the place. So in other words, conventional samples are some times more different from each other, than from organic samples. Therefore (not really, but it is a nice segue) we take a more detailed look at what makes conventional samples different from each other.
+
+
+## conventional samples
+
+```{r echo=FALSE}
+nsamples <- asv_table.fam.relab %>% sample_names() %>% length
+paste("Number of samples:", nsamples)
+```
+
+
+
+#### Permanova
 
 If I leave DDEpp,DDEop+DDEpp+DDDopTDE+DDTop+DDDppTDE out, it works otherwise it doesn't ...
-```{r}
+```{r echo=FALSE}
 method = 'bray'
 metadata <- as(sample_data(asv_table.fam.relab), "data.frame")
 samp_dist <- distance(asv_table.fam.relab, method = method)
 vars_perm <- paste(vars, collapse = '+')
-form <- as.formula(paste("samp_dist ~", vars_perm))
-    
-adonis(samp_dist ~ PesticideConcentration+PesticideCompounds+Linuron+DimethenamidP+Cyromazine+Propamocarb+Flnicamid+Chloridazon+Metamitron+Cymoxanil+Azoxystrobin+Fluopicolide+BenthiavalicarbIsopropyl+Boscalid+Chlorpropham+Metribuzin+Desmedipham+Lenacil+Prosulfocarb+Penidmethalin+FenoxapropEthyl+Bixafen+Clethodim+Prothioconazole+ProthioconazoleDethio+tebuconazole+Metolachlor+Fenpropimorph+Bentazone+Adlrin+DDTpp+Glyphosate+AMPA, data = metadata, permutations = 999 )
+
+bray <- adonis(samp_dist ~ PesticideConcentration+PesticideCompounds+Linuron+DimethenamidP+Cyromazine+Propamocarb+Flnicamid+Chloridazon+Metamitron+Cymoxanil+Azoxystrobin+Fluopicolide+BenthiavalicarbIsopropyl+Boscalid+Chlorpropham+Metribuzin+Desmedipham+Lenacil+Prosulfocarb+Penidmethalin+FenoxapropEthyl+Bixafen+Clethodim+Prothioconazole+ProthioconazoleDethio+tebuconazole+Metolachlor+Fenpropimorph+Bentazone+Adlrin+DDTpp+Glyphosate+AMPA, data = metadata, permutations = 999 )$aov.tab
+
+
+method = 'uunifrac'
+metadata <- as(sample_data(asv_table.fam.relab), "data.frame")
+samp_dist <- distance(asv_table.fam.relab, method = method)
+vars_perm <- paste(vars, collapse = '+')
+
+uuni <- adonis(samp_dist ~ PesticideConcentration+PesticideCompounds+Linuron+DimethenamidP+Cyromazine+Propamocarb+Flnicamid+Chloridazon+Metamitron+Cymoxanil+Azoxystrobin+Fluopicolide+BenthiavalicarbIsopropyl+Boscalid+Chlorpropham+Metribuzin+Desmedipham+Lenacil+Prosulfocarb+Penidmethalin+FenoxapropEthyl+Bixafen+Clethodim+Prothioconazole+ProthioconazoleDethio+tebuconazole+Metolachlor+Fenpropimorph+Bentazone+Adlrin+DDTpp+Glyphosate+AMPA, data = metadata, permutations = 999 )$aov.tab
+
+
+method = 'wunifrac'
+metadata <- as(sample_data(asv_table.fam.relab), "data.frame")
+samp_dist <- distance(asv_table.fam.relab, method = method)
+vars_perm <- paste(vars, collapse = '+')
+
+wuni <- adonis(samp_dist ~ PesticideConcentration+PesticideCompounds+Linuron+DimethenamidP+Cyromazine+Propamocarb+Flnicamid+Chloridazon+Metamitron+Cymoxanil+Azoxystrobin+Fluopicolide+BenthiavalicarbIsopropyl+Boscalid+Chlorpropham+Metribuzin+Desmedipham+Lenacil+Prosulfocarb+Penidmethalin+FenoxapropEthyl+Bixafen+Clethodim+Prothioconazole+ProthioconazoleDethio+tebuconazole+Metolachlor+Fenpropimorph+Bentazone+Adlrin+DDTpp+Glyphosate+AMPA, data = metadata, permutations = 999 )$aov.tab
+
+
+results <- data.frame("R2_Bray"= bray$R2, "Pval_Bray"= bray$`Pr(>F)`,
+           "R2_Unifrac" = uuni$R2, "Pval_Unifrac" = uuni$`Pr(>F)`,
+           "R2_Wunifrac" = wuni$R2, "Pval_Wunifrac" = wuni$`Pr(>F)`) 
+
+rownames(results) <- bray %>% rownames()
+kable(results)
+
+
 ```
-
-
 Most is explained by PesticideConcentration, some by PesticideCompounds and Metribuzin 
 
 
